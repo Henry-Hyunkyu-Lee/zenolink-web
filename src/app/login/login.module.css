@@ -54,6 +54,10 @@
   line-height: 1.6;
 }
 
+.warning {
+  color: #b42318;
+}
+
 .loginButton {
   margin-top: 8px;
   border: none;

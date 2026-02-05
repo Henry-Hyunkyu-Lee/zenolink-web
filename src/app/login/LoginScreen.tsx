@@ -114,7 +114,9 @@ export default function LoginScreen() {
         <span className={styles.badge}>Private Beta</span>
       </div>
       <h1 className={styles.title}>Invitation Only</h1>
-      <p className={styles.subtitle}>This service is available to invited users only.</p>
+      <p className={`${styles.subtitle} ${styles.warning}`}>
+        This service is available to invited users only.
+      </p>
 
       <button
         className={styles.loginButton}
