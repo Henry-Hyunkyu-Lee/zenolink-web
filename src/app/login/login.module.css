@@ -74,6 +74,52 @@
   box-shadow: none;
 }
 
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  background: linear-gradient(
+      90deg,
+      rgba(var(--accent-rgb), 0.18) 0%,
+      rgba(255, 255, 255, 0.98) 45%
+    );
+  box-shadow: 0 14px 30px rgba(10, 29, 60, 0.16);
+  z-index: 1000;
+}
+
+.toastIcon {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.2);
+}
+
+.toastMessage {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.toastClose {
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.toastClose:hover {
+  color: var(--accent-strong);
+}
+
 .spinner {
   width: 52px;
   height: 52px;
