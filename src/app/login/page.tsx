@@ -1,6 +1,12 @@
-﻿import LoginScreen from "./LoginScreen";
+﻿import { Suspense } from "react";
+import LoginScreen from "./LoginScreen";
+import Loading from "./loading";
 
 export default function LoginPage() {
-  return <LoginScreen />;
+  return (
+    <Suspense fallback={<Loading />}>
+      <LoginScreen />
+    </Suspense>
+  );
 }
 
