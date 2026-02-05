@@ -136,20 +136,20 @@ async function fetchAssociationScore(
         },
         body: JSON.stringify({
           query: `
-            query TargetAssociations($ensemblId: String!, $size: Int!, $index: Int!) {
-              target(ensemblId: $ensemblId) {
-                associatedDiseases(page: { size: $size, index: $index }) {
+            query DiseaseAssociations($diseaseId: String!, $size: Int!, $index: Int!) {
+              disease(efoId: $diseaseId) {
+                associatedTargets(page: { size: $size, index: $index }) {
                   count
                   rows {
                     score
-                    disease { id }
+                    target { id }
                   }
                 }
               }
             }
           `,
           variables: {
-            ensemblId: targetEnsemblId,
+            diseaseId: indicationId,
             size: OPENTARGETS_PAGE_SIZE,
             index,
           },
@@ -164,23 +164,23 @@ async function fetchAssociationScore(
 
     const payload = (await response.json()) as {
       data?: {
-        target?: {
-          associatedDiseases?: {
+        disease?: {
+          associatedTargets?: {
             count?: number;
             rows?: Array<{
               score?: number | null;
-              disease?: { id?: string | null };
+              target?: { id?: string | null };
             }>;
           };
         };
       };
     };
 
-    const rows = payload.data?.target?.associatedDiseases?.rows ?? [];
-    total = payload.data?.target?.associatedDiseases?.count ?? total;
+    const rows = payload.data?.disease?.associatedTargets?.rows ?? [];
+    total = payload.data?.disease?.associatedTargets?.count ?? total;
 
     for (const row of rows) {
-      if (row?.disease?.id === indicationId) {
+      if (row?.target?.id === targetEnsemblId) {
         return row.score ?? null;
       }
     }
