@@ -179,6 +179,15 @@
   background: #f5fbff;
 }
 
+.selectInput {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-weight: 600;
+  color: var(--ink);
+}
+
 .fileName {
   font-size: 13px;
   color: var(--muted);

@@ -4,6 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./app.module.css";
 import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase/browser";
+import {
+  DEFAULT_INDICATION_ID,
+  INDICATIONS,
+  getIndicationLabel,
+} from "@/lib/indications";
 
 type RunRow = {
   id: string;
@@ -15,10 +20,13 @@ type RunRow = {
   affinity_prob: number | null;
   ligand_name: string | null;
   gene_name: string | null;
+  indication_id: string | null;
+  association_score: number | null;
 };
 
 export default function AppPage() {
   const [memo, setMemo] = useState("");
+  const [indicationId, setIndicationId] = useState(DEFAULT_INDICATION_ID);
   const [ligandFileName, setLigandFileName] = useState<string | null>(null);
   const [targetFileName, setTargetFileName] = useState<string | null>(null);
   const [ligandFile, setLigandFile] = useState<File | null>(null);
@@ -72,7 +80,7 @@ export default function AppPage() {
     let query = supabase
       .from("runs")
       .select(
-        "id,status,memo,created_at,warnings,affinity_value,affinity_prob,ligand_name,gene_name",
+        "id,status,memo,created_at,warnings,affinity_value,affinity_prob,ligand_name,gene_name,indication_id,association_score",
         {
           count: "exact",
         }
@@ -180,6 +188,11 @@ export default function AppPage() {
       return;
     }
 
+    if (!indicationId) {
+      setSubmitError("Indication ?좏깮??꾩슂?⑸땲??");
+      return;
+    }
+
     setSubmitError(null);
     setSubmitSummary(null);
     setIsSubmitting(true);
@@ -194,6 +207,7 @@ export default function AppPage() {
     }
 
     const formData = new FormData();
+    formData.append("indication_id", indicationId);
     formData.append("ligand_csv", ligandFile);
     formData.append("target_csv", targetFile);
     formData.append("memo", memo);
@@ -239,6 +253,13 @@ export default function AppPage() {
     return `${(value * 100).toFixed(2)}%`;
   };
 
+  const formatAssociationScore = (value: number | null) => {
+    if (value == null || Number.isNaN(value)) {
+      return "-";
+    }
+    return value.toFixed(4);
+  };
+
   const formatLocalTime = (value: string | null) => {
     if (!value) {
       return "-";
@@ -253,6 +274,13 @@ export default function AppPage() {
   const formatName = (value: string | null) => {
     const trimmed = value?.trim();
     return trimmed ? trimmed : "-";
+  };
+
+  const formatIndication = (value: string | null) => {
+    if (!value) {
+      return "-";
+    }
+    return getIndicationLabel(value);
   };
 
 
@@ -360,6 +388,20 @@ export default function AppPage() {
       <section className={styles.panel}>
         <form className={styles.form}>
           <label className={styles.label}>
+            Indication
+            <select
+              className={styles.selectInput}
+              value={indicationId}
+              onChange={(event) => setIndicationId(event.target.value)}
+            >
+              {INDICATIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
             리간드 CSV (smiles)
             <input
               className={styles.fileInput}
@@ -415,6 +457,7 @@ export default function AppPage() {
           {submitError && <p className={styles.error}>{submitError}</p>}
 
           <div className={styles.hint}>
+            <p>Indication: Leukemia (EFO_0000565)</p>
             <p>리간드 CSV: `smiles` 필수, `name` 컬럼 optional</p>
             <p>타겟 CSV: `sequence` 필수, `name` 컬럼 optional</p>
             <p>sequence 길이 제한: 1280</p>
@@ -499,6 +542,7 @@ export default function AppPage() {
                   </th>
                   <th>Ligand</th>
                   <th>Gene</th>
+                  <th>Indication</th>
                   <th>Memo</th>
                   <th>User</th>
                   <th>
@@ -570,6 +614,7 @@ export default function AppPage() {
                       </span>
                     </button>
                   </th>
+                  <th>Association</th>
                   <th>Warnings</th>
                 </tr>
               </thead>
@@ -587,6 +632,9 @@ export default function AppPage() {
                     <td className={styles.mono}>
                       {formatName(run.gene_name)}
                     </td>
+                    <td className={styles.mono}>
+                      {formatIndication(run.indication_id)}
+                    </td>
                     <td>{run.memo ?? "-"}</td>
                     <td className={styles.mono}>{userEmail ?? "-"}</td>
                     <td className={styles.mono}>
@@ -597,6 +645,9 @@ export default function AppPage() {
                     </td>
                     <td className={styles.mono}>
                       {formatAffinityProb(run.affinity_prob)}
+                    </td>
+                    <td className={styles.mono}>
+                      {formatAssociationScore(run.association_score)}
                     </td>
                     <td>
                       {Array.isArray(run.warnings)
