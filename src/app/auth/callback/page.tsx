@@ -36,13 +36,18 @@ export default function AuthCallbackPage() {
         return;
       }
 
+      const supabase = createBrowserClient();
       const code = params.get("code");
       if (!code) {
-        router.replace("/login?reason=auth_error");
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          router.replace("/app");
+        } else {
+          router.replace("/login?reason=auth_error");
+        }
         return;
       }
 
-      const supabase = createBrowserClient();
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) {
         router.replace(
