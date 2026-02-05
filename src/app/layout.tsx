@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/zefit.ico",
   },
+};
+
+export const viewport: Viewport = {
   themeColor: "#00AEEF",
 };
 
