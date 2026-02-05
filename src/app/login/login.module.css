@@ -74,6 +74,7 @@
   box-shadow: none;
 }
 
+
 @media (hover: hover) and (pointer: fine) {
   .loginButton:hover:not(:disabled) {
     transform: translateY(-1px);
