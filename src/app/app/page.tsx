@@ -9,6 +9,7 @@ import {
   INDICATIONS,
   getIndicationLabel,
 } from "@/lib/indications";
+import { stringifyCsv } from "@/lib/csv";
 
 type RunRow = {
   id: string;
@@ -283,6 +284,126 @@ export default function AppPage() {
     return getIndicationLabel(value);
   };
 
+  const handleDownloadCsv = async () => {
+    if (!supabase) {
+      return;
+    }
+
+    const batchSize = 1000;
+    const allRuns: RunRow[] = [];
+    const trimmedQuery = searchQuery.trim();
+    let from = 0;
+
+    while (true) {
+      let query = supabase
+        .from("runs")
+        .select(
+          "id,status,memo,created_at,warnings,affinity_value,affinity_prob,ligand_name,gene_name,indication_id,association_score"
+        );
+
+      if (trimmedQuery) {
+        const escaped = trimmedQuery.replace(/%/g, "\\%").replace(/,/g, "\\,");
+        query = query.or(
+          `memo.ilike.%${escaped}%,ligand_name.ilike.%${escaped}%,gene_name.ilike.%${escaped}%,smiles.eq.${escaped},sequence.eq.${escaped}`
+        );
+      }
+
+      switch (sortKey) {
+        case "created_at_asc":
+          query = query.order("created_at", { ascending: true });
+          break;
+        case "status_asc":
+          query = query.order("status", { ascending: true });
+          break;
+        case "status_desc":
+          query = query.order("status", { ascending: false });
+          break;
+        case "affinity_value_desc":
+          query = query.order("affinity_value", {
+            ascending: false,
+            nullsFirst: false,
+          });
+          break;
+        case "affinity_value_asc":
+          query = query.order("affinity_value", {
+            ascending: true,
+            nullsFirst: true,
+          });
+          break;
+        case "affinity_prob_desc":
+          query = query.order("affinity_prob", {
+            ascending: false,
+            nullsFirst: false,
+          });
+          break;
+        case "affinity_prob_asc":
+          query = query.order("affinity_prob", {
+            ascending: true,
+            nullsFirst: true,
+          });
+          break;
+        default:
+          query = query.order("created_at", { ascending: false });
+      }
+
+      const { data, error } = await query.range(from, from + batchSize - 1);
+      if (error) {
+        setRunsError(error.message);
+        return;
+      }
+
+      const batch = data ?? [];
+      allRuns.push(...batch);
+
+      if (batch.length < batchSize) {
+        break;
+      }
+
+      from += batchSize;
+    }
+
+    if (allRuns.length === 0) {
+      return;
+    }
+
+    const headers = [
+      "Status",
+      "Ligand",
+      "Gene",
+      "Indication",
+      "Memo",
+      "Affinity Value",
+      "Affinity Prob",
+      "Association",
+    ];
+
+    const rows = allRuns.map((run) => [
+      run.status ?? "-",
+      formatName(run.ligand_name),
+      formatName(run.gene_name),
+      formatIndication(run.indication_id),
+      run.memo ?? "-",
+      formatAffinityValue(run.affinity_value),
+      formatAffinityProb(run.affinity_prob),
+      formatAssociationScore(run.association_score),
+    ]);
+
+    const csvText = stringifyCsv(headers, rows);
+    const blob = new Blob(["\uFEFF", csvText], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    link.href = url;
+    link.download = `runs-${timestamp}.csv`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalCount / pageSize));
@@ -501,6 +622,14 @@ export default function AppPage() {
               disabled={isLoadingRuns}
             >
               {isLoadingRuns ? "로딩 중" : "새로고침"}
+            </button>
+            <button
+              className={styles.refreshButton}
+              type="button"
+              onClick={handleDownloadCsv}
+              disabled={runs.length === 0}
+            >
+              CSV 다운로드
             </button>
             {isLoadingRuns && <span className={styles.badge}>로딩 중</span>}
           </div>

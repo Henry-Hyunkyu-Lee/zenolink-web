@@ -3,6 +3,13 @@ type CsvResult = {
   rows: string[][];
 };
 
+function escapeCsvCell(value: string): string {
+  if (/[",\r\n]/.test(value)) {
+    return `"${value.replace(/"/g, "\"\"")}"`;
+  }
+  return value;
+}
+
 export function parseCsv(text: string): CsvResult {
   const normalized = text.replace(/^\uFEFF/, "");
   const rows: string[][] = [];
@@ -64,4 +71,18 @@ export function parseCsv(text: string): CsvResult {
     headers,
     rows: trimmed,
   };
+}
+
+export function stringifyCsv(
+  headers: string[],
+  rows: Array<Array<string | number | null | undefined>>
+): string {
+  const allRows = [headers, ...rows];
+  return allRows
+    .map((row) =>
+      row
+        .map((value) => escapeCsvCell(value == null ? "" : String(value)))
+        .join(",")
+    )
+    .join("\r\n");
 }
